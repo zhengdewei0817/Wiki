@@ -1,1 +1,86 @@
 
+# JS原型与继承. -- 郑德伟,原创,2016-07-24
+
+```
+function Person(){}
+
+var xiaoming = new Person();
+```
+这是一个定义函数，然后实例化对象的一段代码。
+
+new是实现，本质上做了如下操作
+>创建了一个空对象  xiaoming
+>将构造函数的作用域赋值给新对象  即this定义指向xiaoming
+>执行构造函数的代码
+>返回新对象
+
+但是本质上实现了什么呢？
+
+创建一个新的函数，就会根据规则创建一个prototype属性，并指向函数的原型对象。而原型对象上会有个constroctur属性，这个属性会指向prototype所在的函数指针。
+
+按照上面的代码      
+
+Person.prototype.constructor = Person;
+
+自定义函数后，只会默认创建constroctur属性 ，剩下的属性则都会继承于Object。
+
+当创建实例化对象时，实例化对象内部会有一个指针[[Prototype]]就是我们常说的__proto__,这个指针会指向构造函数的原型对象。
+
+按照上面的代码      
+
+xiaoming.__proto__ = Person.prototype;
+
+用图片来说明问题：
+![Alt text](http://p3.qhimg.com/t0127d29d4cbff5d7bc.jpg)   
+
+－－－－－－－－－－－－－－－－－－到目前为止，应该对创建对象有一个了解－－－－－－－－－－－－－－－－－－－－－－          
+
+### 继承
+
+这里说的继承是原型链继承 ，其它方式继承比较容易理解，不啰嗦。
+
+```
+function Cell(){};
+
+function Animal(){};
+
+Animal.prototype = new Cell();
+
+function Person(){};
+
+Person.prototype = new Animal();
+
+var xiaoming = new Person();
+
+console.log(xiaoming.__proto__ == Persion.prototype); // true
+console.log('-------------------------------')
+console.log(Person.prototype);//Cell{}
+console.log(Person.prototype.constructor);//function Cell(){}
+console.log(Person.prototype.__proto__ == Animal.prototype); //true
+console.log('-------------------------------')
+console.log(Animal.prototype);//Cell{}
+console.log(Animal.prototype.constructor);//function Cell(){}
+
+```
+用一张图来解释刚才的打印结果
+
+![Alt text](http://p6.qhimg.com/t0186ed75c4a25fc892.jpg)  
+
+
+xiaoming是Person的实例，因此xiaoming.__prort__指向的是Person.prototype；
+
+Person.prototype已经指向了Animal的实例，因此Person.prototype相当于一个全新的对象，原来的constructor已经没有了。就是一个new Animal();因此也有了__proto__;
+
+Person.prototype.__proto__ 指向了 Animal.prototype;
+
+同理，由于Animal.prototype也指向了一个new Cell() ,所以原有的constructor也没有了，并产生了一个__proto__;
+
+Animal.prototype.__proto__ 指向了 Cell.prototype;
+
+由于Cell指向的是Object，所以浏览器打印的 Animal.prototype.constructor 就显示为了function Cell(){};
+
+而实际上依然会向上引用，直至引用到null。
+
+而直接访问Person.prototype.constructor 由于原型对象已经变味了Animal的实例对象，所以不存在了constructor。只能沿着__proto__继续向上寻找，直到在Cell.prototype中找到constructor。所以打印为function Cell(){};
+
+而这条一直向上寻找的链条结构，就被称之为原型链。
